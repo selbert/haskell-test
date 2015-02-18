@@ -26,7 +26,9 @@ readConsoleInput = do
 printOutputToConsole :: Bus ()
 printOutputToConsole = do
     chan <- ask
-    io $ do line <- readChan chan; putStrLn $ generateAnswer line
+    io $ do
+        line <- readChan chan
+        putStrLn $ generateAnswer line
     printOutputToConsole
 
 generateAnswer:: String -> String
