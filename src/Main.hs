@@ -1,25 +1,41 @@
 module Main where
 
 import           Control.Concurrent
+import           Control.Monad.Reader
+
+type Bus = ReaderT (Chan String) IO
 
 main :: IO ()
 main = do
     chan <- newChan
-    _ <- forkIO $ readConsoleInput chan
-    printOutputToConsole chan
-    return ()
+    runReaderT run chan
 
-readConsoleInput :: Chan String -> IO ()
-readConsoleInput chan = do
-    _ <- forkIO $ forever $ do
+run :: Bus ()
+run = do
+    readConsoleInput
+    printOutputToConsole
+
+readConsoleInput :: Bus ()
+readConsoleInput = do
+    chan <- ask
+    _ <- io $ forkIO $ forever $ do
         line <- getLine
         writeChan chan line
-    return ()
-    where
-        forever a = a >> forever a
+    io $ return ()
 
-printOutputToConsole :: Chan String -> IO ()
-printOutputToConsole chan = do
-    line <- readChan chan
-    putStrLn line
-    printOutputToConsole chan
+printOutputToConsole :: Bus ()
+printOutputToConsole = do
+    chan <- ask
+    io $ do line <- readChan chan; putStrLn $ generateAnswer line
+    printOutputToConsole
+
+generateAnswer:: String -> String
+generateAnswer line =
+    let splittedLine = words line in
+        case (head splittedLine) of
+            "sono" -> "si"
+            "culo" -> "merda"
+            _ -> line
+
+io :: IO a -> Bus a
+io = liftIO
